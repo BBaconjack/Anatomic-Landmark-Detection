@@ -22,6 +22,7 @@ class Rescale(object):
     def __call__(self, sample):
         # image, landmarks, targetMaps = sample['image'], sample['landmarks'], sample['targetMaps']
         image, landmarks = sample['image'], sample['landmarks']
+        W,H,spacing = sample['width'],sample['height'],sample['spacing']
         h, w = image.shape[:2]
         # print (h, w)
         if isinstance(self.output_size, int):
@@ -36,7 +37,7 @@ class Rescale(object):
         img = transform.resize(image, (new_h, new_w), mode='constant')
         landmarks = landmarks * [1 / (w - 1), 1 / (h - 1)]
 
-        return {'image': img, 'landmarks': landmarks}
+        return {'image': img, 'landmarks': landmarks,'width':W,'height':H,'spacing':spacing}
 
 class RandomCrop(object):
     """Crop randomly the image in a sample.
@@ -56,6 +57,7 @@ class RandomCrop(object):
 
     def __call__(self, sample):
         image, landmarks = sample['image'], sample['landmarks']
+        W,H,spacing = sample['width'],sample['height'],sample['spacing']
 
         h, w = image.shape[:2]
         new_h, new_w = self.output_size
@@ -67,7 +69,7 @@ class RandomCrop(object):
                 left: left + new_w]
         landmarks = landmarks - [left, top]
 
-        return {'image': image, 'landmarks': landmarks}
+        return {'image': image, 'landmarks': landmarks,'width':W,'height':H,'spacing':spacing}
 
 
 class ToTensor(object):
@@ -76,6 +78,7 @@ class ToTensor(object):
     def __call__(self, sample):
         # image, tlandmarks, targetMaps = sample['image'], sample['landmarks'], sample['targetMaps']
         image, tlandmarks = sample['image'], sample['landmarks']
+        W,H,spacing = sample['width'],sample['height'],sample['spacing']
         # swap color axis because
         # numpy image: H x W x C
         # torch image: C X H X W
@@ -83,7 +86,10 @@ class ToTensor(object):
         landmarks = np.zeros(tlandmarks.shape)
         landmarks[:, 0], landmarks[:, 1] = tlandmarks[:, 1], tlandmarks[:, 0]
         return {'image': torch.from_numpy(image).float(),
-                'landmarks': torch.from_numpy(landmarks).float()}
+                'landmarks': torch.from_numpy(landmarks).float(),
+                'width':torch.tensor(W),
+                'height':torch.tensor(H),
+                'spacing':torch.tensor(spacing)}
         # 'targetMaps': [torch.from_numpy(targetMap).float() for targetMap in targetMaps]}
 
 
@@ -111,8 +117,12 @@ class LandmarksDataset(Dataset):
         image = io.imread(img_name)
         landmarks = self.landmarks_frame.iloc[idx, 1:self.landmarkNum * 2 + 1].values.astype('float')
         landmarks = landmarks.reshape(-1, 2)
+        W = self.landmarks_frame.iloc[idx,-3].astype('float')
+        H = self.landmarks_frame.iloc[idx,-2].astype('float')
+        spacing = self.landmarks_frame.iloc[idx,-1].astype('float')
 
-        sample = {'image': image, 'landmarks': landmarks}
+
+        sample = {'image': image, 'landmarks': landmarks,'width':W,'height':H,'spacing':spacing}
         if self.transform:
             sample = self.transform(sample)
 

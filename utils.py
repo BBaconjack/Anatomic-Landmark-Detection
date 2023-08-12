@@ -57,15 +57,15 @@ def Mydist(a, b):
 	x2, y2 = b
 	return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
 
-def calculate_deviation(coordinates1, lables):
+def calculate_deviation(coordinates1, lables,W,H,spacing):
 	coordinates1_b = coordinates1.clone()
 	lables_b = lables.clone()
 	
-	coordinates1_b[:, :, 0] = coordinates1_b[:, :, 0] * 1934
-	coordinates1_b[:, :, 1] = coordinates1_b[:, :, 1] * 2399
+	coordinates1_b[:, :, 0] = coordinates1_b[:, :, 0] * W
+	coordinates1_b[:, :, 1] = coordinates1_b[:, :, 1] * H
 	
-	lables_b[:, :, 0] = lables_b[:, :, 0] * 1934
-	lables_b[:, :, 1] = lables_b[:, :, 1] * 2399
+	lables_b[:, :, 0] = lables_b[:, :, 0] * W
+	lables_b[:, :, 1] = lables_b[:, :, 1] * H
 	
-	tem_dist = torch.sqrt(torch.sum(torch.pow(coordinates1_b - lables_b, 2), 2))
+	tem_dist = torch.sqrt(torch.sum(torch.pow(coordinates1_b - lables_b, 2), 2))*spacing
 	return tem_dist

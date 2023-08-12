@@ -21,6 +21,7 @@ def train_model(model, dataloaders, criterion, optimizer, config):
 				data = dataloaders[phase][ide]
 				
 				inputs, labels = data['image'], data['landmarks']
+				W,H,spacing = data['width'],data['height'],data['spacing']
 				inputs = inputs.to(config.use_gpu)
 
 				optimizer.zero_grad()
@@ -37,7 +38,8 @@ def train_model(model, dataloaders, criterion, optimizer, config):
 					# landmark prediction. The results are normalized to (0, 1)
 					predicted_landmarks = utils.regression_voting(heatmaps, config.R2).cuda(config.use_gpu)
 					# deviation calculation for all landmarks
-					dev = utils.calculate_deviation(predicted_landmarks.detach(), labels.cuda(config.use_gpu).detach())
+					dev = utils.calculate_deviation(predicted_landmarks.detach(), labels.cuda(config.use_gpu).detach(),
+				     W.cuda(config.use_gpu).detach(),H.cuda(config.use_gpu).detach(),spacing.cuda(config.use_gpu).detach())
 					train_dev.append(dev)
 
 				running_loss += loss.item()
@@ -50,7 +52,7 @@ def train_model(model, dataloaders, criterion, optimizer, config):
 		# validation
 		if epoch%test_epoch == 0:
 			# result statistics
-			train_dev = torch.stack(train_dev).squeeze() * config.spacing
+			train_dev = torch.stack(train_dev).squeeze()
 			train_SDR, train_SD, train_MRE = utils.get_statistical_results(train_dev, config)
 
 			# MRE is the mean radial error, SDR is the the successful detection rate in five target radius (1mm, 2mm, 2.5mm, 3mm, 4mm)
